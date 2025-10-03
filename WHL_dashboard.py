@@ -6,11 +6,17 @@ import streamlit as st
 import sqlite3 as db
 import pandas as pd
 import altair as alt
+from streamlit.components.v1 import html
 
 # Set up the page and titles
-st.set_page_config(page_title="WHL Stats", layout="wide")
-st.title("WHL Stats")
-st.markdown("Statistical dashboard of the Womens' Hockey League Switzerland")
+st.set_page_config(page_title="Hockeyfuchs", layout="wide")
+colA, colB = st.columns([1, 7])
+with colA:
+    img_path = './data/images/fuchs.png'
+    st.image(img_path, width=150)
+with colB:
+    st.title("HOCKEYFUCHS")
+    st.markdown("Live-Statistik-Dashboard zum Schweizer Eishockey")
 
 # Load data from the SQLite database
 conn = db.connect('data/WHL_stats.db')
@@ -26,41 +32,54 @@ turnover_ema = pd.read_sql_query("SELECT * FROM turnover_ema_home", conn)
 conn.close()
 
 # Team selection dropdown
-option = st.selectbox(
+#option = st.selectbox(
+#    " ",
+#    ["Liga auswählen...", "National League", "Women's League", "Swiss League", "MySports League", "1. Liga", "3. Liga", "4. Liga"]
+#)
+
+#option = st.selectbox(
+#    " ",
+#    ["Ebene wählen..."] + teams['team_name'].tolist()
+#)
+
+# Team selection dropdown
+optionB = st.selectbox(
     " ",
     ["Bitte ein Team auswählen..."] + teams['team_name'].tolist()
 )
 
 # Display team information and statistics in separate tabs
-if option and option != "Bitte ein Team auswählen...":
+if optionB and optionB != "Bitte ein Team auswählen...":
     # Display team logo and name
-    col1, col2 = st.columns([1, 3])
+    col1, col2 = st.columns([0.75, 3])
     with col1:
-        img_path = teams.loc[teams['team_name'] == option, 'png_url'].values[0]
+        img_path = teams.loc[teams['team_name'] == optionB, 'png_url'].values[0]
         st.image(img_path, width=150)
     with col2:
-        st.markdown(f"# {option}")
+        st.markdown(f"# {optionB}")
 
     # Create tabs for different statistics
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(["Wins", "Points", "Powerplay", "Penaltykill", "Scoring", "Defense", "Attendance", "Turnover"])
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs(["Wins", "Points", "Powerplay", "Penaltykill", "Scoring", "Defense", "Tornover", "Zuschauer", "Interesse im Internet"])
     with tab1:
-        st.markdown(f"**Gewinnwahrscheinlichkeit über die bisherige Spielzeit in der WHL (max=100 Prozent)**")
-        wins_data = wins_ema[wins_ema['Team'] == option]
-        wins_data["Date"] = pd.to_datetime(wins_data["Date"])
-        wins_data = wins_data[['YearMonthDay', 'EMA']]
-        wins_data['EMA'] = wins_data['EMA'] * 100  # Convert to percentage
-        chart = alt.Chart(wins_data).mark_line().encode(
-            x=alt.X('YearMonthDay', title='Spieltage', sort='ascending'),
-            y=alt.Y('EMA', title='Exponentially Weighted Average', scale=alt.Scale(domain=[0, 100])),
-            tooltip=[
-                alt.Tooltip('YearMonthDay', title='Spieltag'),
-                alt.Tooltip('EMA', title='EWA', format=".1f")
-            ]
-        )
-        st.altair_chart(chart, use_container_width=True)
+        with st.container(height=700):
+            st.markdown(f"**Gewinnwahrscheinlichkeit über die bisherige Spielzeit in der WHL (max=100 Prozent)**")
+            wins_data = wins_ema[wins_ema['Team'] == optionB]
+            wins_data["Date"] = pd.to_datetime(wins_data["Date"])
+            wins_data = wins_data[['YearMonthDay', 'EMA']]
+            wins_data['EMA'] = wins_data['EMA'] * 100  # Convert to percentage
+            chart = alt.Chart(wins_data).mark_line().encode(
+                x=alt.X('YearMonthDay', title='Spieltage', sort='ascending'),
+                y=alt.Y('EMA', title='Exponentially Weighted Average', scale=alt.Scale(domain=[0, 100])),
+                tooltip=[
+                    alt.Tooltip('YearMonthDay', title='Spieltag'),
+                    alt.Tooltip('EMA', title='EWA', format=".1f")
+                ]
+            )
+            st.write(chart.properties(width = 600, height = 600))
+            
     with tab2:
         st.markdown(f"**Geschätzte Punkte über die bisherige Spielzeit in der WHL (max=3 Punkte)**")
-        points_data = points_ema[points_ema['Team'] == option]
+        points_data = points_ema[points_ema['Team'] == optionB]
         points_data["Date"] = pd.to_datetime(points_data["Date"])
         points_data = points_data[['YearMonthDay', 'EMA']]
         chart = alt.Chart(points_data).mark_line().encode(
@@ -74,7 +93,7 @@ if option and option != "Bitte ein Team auswählen...":
         st.altair_chart(chart, use_container_width=True)
     with tab3:
         st.markdown(f"**Powerplay-Effizienz über die bisherige Spielzeit in der WHL (max=100 Prozent)**")
-        ppe_data = ppe_ema[ppe_ema['Team'] == option]
+        ppe_data = ppe_ema[ppe_ema['Team'] == optionB]
         ppe_data["Date"] = pd.to_datetime(ppe_data["Date"])
         ppe_data = ppe_data[['YearMonthDay', 'EMA']]
         ppe_data['EMA'] = ppe_data['EMA'] * 100  # Convert to percentage
@@ -89,7 +108,7 @@ if option and option != "Bitte ein Team auswählen...":
         st.altair_chart(chart, use_container_width=True)
     with tab4:
         st.markdown(f"**Penaltykill-Effizienz über die bisherige Spielzeit in der WHL (max=100 Prozent)**")
-        pke_data = pke_ema[pke_ema['Team'] == option]
+        pke_data = pke_ema[pke_ema['Team'] == optionB]
         pke_data["Date"] = pd.to_datetime(pke_data["Date"])
         pke_data = pke_data[['YearMonthDay', 'EMA']]
         pke_data['EMA'] = pke_data['EMA'] * 100  # Convert to percentage
@@ -104,7 +123,7 @@ if option and option != "Bitte ein Team auswählen...":
         st.altair_chart(chart, use_container_width=True)
     with tab5:
         st.markdown(f"**Scoring-Produktivität über die bisherige Spielzeit in der WHL**")
-        scoring_data = scoring_ema[scoring_ema['Team'] == option]
+        scoring_data = scoring_ema[scoring_ema['Team'] == optionB]
         scoring_data["Date"] = pd.to_datetime(scoring_data["Date"])
         scoring_data = scoring_data[['YearMonthDay', 'EMA']]
         chart = alt.Chart(scoring_data).mark_line().encode(
@@ -118,7 +137,7 @@ if option and option != "Bitte ein Team auswählen...":
         st.altair_chart(chart, use_container_width=True)
     with tab6:
         st.markdown(f"**Defensive Instabilität über die bisherige Spielzeit in der WHL**")
-        defense_data = defense_ema[defense_ema['Team'] == option]
+        defense_data = defense_ema[defense_ema['Team'] == optionB]
         defense_data["Date"] = pd.to_datetime(defense_data["Date"])
         defense_data = defense_data[['YearMonthDay', 'EMA']]
         chart = alt.Chart(defense_data).mark_line().encode(
@@ -131,22 +150,8 @@ if option and option != "Bitte ein Team auswählen...":
         )
         st.altair_chart(chart, use_container_width=True)
     with tab7:
-        st.markdown(f"**Zuschauerandrang über die bisherige Spielzeit in der WHL**")
-        spectators_data = spectators_ema[spectators_ema['Team'] == option]
-        spectators_data["Date"] = pd.to_datetime(spectators_data["Date"])
-        spectators_data = spectators_data[['YearMonthDay', 'EMA']]
-        chart = alt.Chart(spectators_data).mark_line().encode(
-            x=alt.X('YearMonthDay', title='Spieltage', sort='ascending'),
-            y=alt.Y('EMA', title='Exponentially Weighted Moving Average', scale=alt.Scale(domain=[0, 2500])),
-            tooltip=[
-                alt.Tooltip('YearMonthDay', title='Spieltag'),
-                alt.Tooltip('EMA', title='EMA', format=".1f")
-            ]
-        )
-        st.altair_chart(chart, use_container_width=True)
-    with tab8:
         st.markdown(f"**Spielerwechsel über die bisherige Spielzeit in der WHL in Prozent**")
-        turnover_data = turnover_ema[turnover_ema['Team'] == option]
+        turnover_data = turnover_ema[turnover_ema['Team'] == optionB]
         turnover_data["Date"] = pd.to_datetime(turnover_data["Date"])
         turnover_data = turnover_data[['YearMonthDay', 'EMA']]
         turnover_data['EMA'] = turnover_data['EMA'] * 100  # Convert to percentage
@@ -159,3 +164,29 @@ if option and option != "Bitte ein Team auswählen...":
             ]
         )
         st.altair_chart(chart, use_container_width=True)
+    with tab8:
+        st.markdown(f"**Zuschauerandrang über die bisherige Spielzeit in der WHL**")
+        spectators_data = spectators_ema[spectators_ema['Team'] == optionB]
+        spectators_data["Date"] = pd.to_datetime(spectators_data["Date"])
+        spectators_data = spectators_data[['YearMonthDay', 'EMA']]
+        chart = alt.Chart(spectators_data).mark_line().encode(
+            x=alt.X('YearMonthDay', title='Spieltage', sort='ascending'),
+            y=alt.Y('EMA', title='Exponentially Weighted Moving Average', scale=alt.Scale(domain=[0, 2500])),
+            tooltip=[
+                alt.Tooltip('YearMonthDay', title='Spieltag'),
+                alt.Tooltip('EMA', title='EMA', format=".1f")
+            ]
+        )
+        st.altair_chart(chart, use_container_width=True)
+    with tab9:
+        jvsrpt = """<script type="text/javascript" src="https://ssl.gstatic.com/trends_nrtr/4215_RC01/embed_loader.js"></script>
+  <script type="text/javascript">
+    trends.embed.renderExploreWidget("GEO_MAP", {"comparisonItem":[{"keyword":"ZSC Lions","geo":"CH","time":"today 12-m"}],"category":0,"property":""}, {"exploreQuery":"geo=CH&q=ZSC%20Lions&hl=de&date=today 12-m","guestPath":"https://trends.google.de:443/trends/embed/"});
+  </script>"""
+        html(jvsrpt, height=900, width=800)
+        jvsrpt2 = """<script type="text/javascript" src="https://ssl.gstatic.com/trends_nrtr/4215_RC01/embed_loader.js"></script>
+  <script type="text/javascript">
+    trends.embed.renderExploreWidget("TIMESERIES", {"comparisonItem":[{"keyword":"SC Langenthal","geo":"CH","time":"today 5-y"}],"category":0,"property":""}, {"exploreQuery":"date=today%205-y&geo=CH&q=SC%20Langenthal&hl=de","guestPath":"https://trends.google.de:443/trends/embed/"});
+  </script>"""
+        html(jvsrpt2, height=900, width=800)
+
